@@ -1,6 +1,7 @@
-/*
 package nz.ac.canterbury.seng303.lab2.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.app.AlertDialog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,22 +31,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-//import org.koin.androidx.viewmodel.ext.android.viewModel
 import androidx.navigation.NavController
-import nz.ac.canterbury.seng303.lab2.models.Note
-import nz.ac.canterbury.seng303.lab2.util.convertTimestampToReadableTime
-import nz.ac.canterbury.seng303.lab2.viewmodels.NoteViewModel
+import nz.ac.canterbury.seng303.lab2.models.Flashcard
+import nz.ac.canterbury.seng303.lab2.viewmodels.FlashcardViewModel
 
 @Composable
-fun NoteList(navController: NavController, noteViewModel: NoteViewModel) {
-    noteViewModel.getNotes()
-    val notes: List<Note> by noteViewModel.notes.collectAsState(emptyList())
-    if (notes.isEmpty()) {
+fun FlashcardList(navController: NavController, flashcardViewModel: FlashcardViewModel) {
+    flashcardViewModel.getFlashcards()
+    val flashcards: List<Flashcard> by flashcardViewModel.flashcards.collectAsState(emptyList())
+
+    if (flashcards.isEmpty()) {
         EmptyStateMessage()
     } else {
         LazyColumn {
-            items(notes) { note ->
-                NoteItem(navController = navController, note = note, deleteFn = {id: Int -> noteViewModel.deleteNoteById(id) })
+            items(flashcards) { flashcard ->
+                FlashcardItem(
+                    flashcard = flashcard,
+                    navController = navController,
+                    deleteFn = { id: Int -> flashcardViewModel.deleteFlashcardById(id) }
+                )
                 Divider() // Add a divider between items
             }
         }
@@ -52,59 +57,48 @@ fun NoteList(navController: NavController, noteViewModel: NoteViewModel) {
 }
 
 @Composable
-fun EmptyStateMessage() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp), // Adjust padding if necessary
-        contentAlignment = Alignment.Center // Center content within the Box
-    ) {
-        Text(
-            text = "There are no cards created.\nPlease create some cards.",
-            style = MaterialTheme.typography.headlineSmall,
-            color = Color.Gray
-        )
-    }
-}
-
-@Composable
-fun NoteItem(navController: NavController, note: Note, deleteFn: (id: Int) -> Unit) {
+fun FlashcardItem(
+    flashcard: Flashcard,
+    navController: NavController,
+    deleteFn: (id: Int) -> Unit
+) {
     val context = LocalContext.current
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .clickable { navController.navigate("NoteCard/${note.id}") },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .clickable { navController.navigate("FlashcardDetail/${flashcard.id}") },
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Display title and timestamp
-        Column(
+        // Display question
+        Text(
+            text = flashcard.question,
+            style = MaterialTheme.typography.headlineSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
-                .weight(3f)
                 .fillMaxWidth()
-        ) {
-            Text(
-                text = note.title,
-                style = MaterialTheme.typography.headlineSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = convertTimestampToReadableTime(note.timestamp),
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
+                .padding(bottom = 8.dp)
+        )
 
+        // Icons row below the question text
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(onClick = {
-                navController.navigate("EditNote/${note.id}")
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=${Uri.encode(flashcard.question)}"))
+                context.startActivity(intent)
+            }) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = "Search",
+                    tint = Color.Blue
+                )
+            }
+            IconButton(onClick = {
+                navController.navigate("EditFlashcard/${flashcard.id}")
             }) {
                 Icon(
                     imageVector = Icons.Outlined.Edit,
@@ -114,10 +108,10 @@ fun NoteItem(navController: NavController, note: Note, deleteFn: (id: Int) -> Un
             }
             IconButton(onClick = {
                 val builder = AlertDialog.Builder(context)
-                builder.setMessage("Delete note \"${note.title}\"?")
+                builder.setMessage("Delete flashcard \"${flashcard.question}\"?")
                     .setCancelable(false)
                     .setPositiveButton("Delete") { dialog, id ->
-                        deleteFn(note.id)
+                        deleteFn(flashcard.id)
                         dialog.dismiss()
                     }
                     .setNegativeButton("Cancel") { dialog, id ->
@@ -134,4 +128,21 @@ fun NoteItem(navController: NavController, note: Note, deleteFn: (id: Int) -> Un
             }
         }
     }
-}*/
+}
+
+
+@Composable
+fun EmptyStateMessage() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "There are no flashcards created.\nPlease create some flashcards.",
+            style = MaterialTheme.typography.headlineSmall,
+            color = Color.Gray
+        )
+    }
+}
