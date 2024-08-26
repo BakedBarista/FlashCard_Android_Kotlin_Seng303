@@ -1,20 +1,20 @@
 package nz.ac.canterbury.seng303.lab2.screens
 
 import android.app.AlertDialog
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -41,17 +41,33 @@ fun CreateFlashcard(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        Text(
+            text = "Add a New Flashcard",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 16.dp)
+        )
+
         OutlinedTextField(
             value = question,
             onValueChange = { newQuestion -> onQuestionChange(newQuestion) },
-            label = { Text("Question") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
+                .background(Color.LightGray, RoundedCornerShape(8.dp)),
+            placeholder = {
+                Text(
+                    text = "Input question here"
+                )
+            }
         )
 
         LazyColumn(
-            modifier = Modifier.weight(1f) // Take remaining space
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = 16.dp)
         ) {
             itemsIndexed(answers) { index, answer ->
                 Row(
@@ -64,7 +80,9 @@ fun CreateFlashcard(
                         checked = correctAnswerIndex == index,
                         onCheckedChange = { isChecked ->
                             if (isChecked) {
-                                onCorrectAnswerChange(index)
+                                if (answer.text.isNotBlank()) {
+                                    onCorrectAnswerChange(index)
+                                }
                             } else if (correctAnswerIndex == index) {
                                 onCorrectAnswerChange(-1)
                             }
@@ -74,24 +92,48 @@ fun CreateFlashcard(
                         value = answer.text,
                         onValueChange = { newText ->
                             onAnswerChange(index, newText)
+                            if (index == correctAnswerIndex && newText.isBlank()) {
+                                onCorrectAnswerChange(-1)
+                            }
                         },
-                        label = { Text("Answer ${index + 1}") },
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .weight(8f)
                             .padding(start = 8.dp)
+                            .background(Color.LightGray, RoundedCornerShape(8.dp))
                     )
+                    IconButton(
+                        onClick = { viewModel.removeAnswer(index) },
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Answer",
+                            tint = Color.Red
+                        )
+                    }
                 }
             }
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = { viewModel.addAnswer() },
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(100.dp)
+                    ) {
+                        Text(text = "+")
+                    }
+                }
+                }
         }
 
-        Button(
-            onClick = { viewModel.addAnswer() },
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 16.dp, bottom = 8.dp)
-        ) {
-            Text("+")
-        }
         Button(
             onClick = {
                 val builder = AlertDialog.Builder(context)
@@ -100,48 +142,41 @@ fun CreateFlashcard(
                     question.isBlank() -> {
                         builder.setMessage("A flashcard must have a question")
                             .setCancelable(false)
-                            .setPositiveButton("close") { dialog, id -> dialog.dismiss() }
+                            .setPositiveButton("Close") { dialog, _ -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
                     }
                     answers.count { it.text.isNotBlank() } < 2 -> {
                         builder.setMessage("A flashcard must have at least two answers")
                             .setCancelable(false)
-                            .setPositiveButton("close") { dialog, id -> dialog.dismiss() }
+                            .setPositiveButton("Close") { dialog, _ -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
                     }
                     correctAnswerIndex < 0 -> {
                         builder.setMessage("A flashcard must have a correct answer")
                             .setCancelable(false)
-                            .setPositiveButton("close") { dialog, id -> dialog.dismiss() }
+                            .setPositiveButton("Close") { dialog, _ -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
                     }
                     else -> {
                         createFlashcardFn(question, answers, correctAnswerIndex)
-                        builder.setMessage("Created flashcard!")
-                            .setCancelable(false)
-                            .setPositiveButton("Ok") { dialog, id ->
-                                onQuestionChange("")
-                                answers.indices.forEach { index ->
-                                    onAnswerChange(index, "")
-                                }
-                                onCorrectAnswerChange(-1)
-                                navController.navigate("ViewFlashCards")
-                            }
-                            .setNegativeButton("Cancel") { dialog, id -> dialog.dismiss() }
-                        val alert = builder.create()
-                        alert.show()
+                        onQuestionChange("")
+                        answers.forEachIndexed { index, _ ->
+                            onAnswerChange(index, "")
+                        }
+                        onCorrectAnswerChange(-1)
+                        navController.navigate("Home")
                     }
                 }
             },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp) // Padding at the bottom of the screen
+                .padding(bottom = 8.dp)
+                .heightIn(min = 48.dp) // Ensure button is not too small
+                .align(Alignment.CenterHorizontally)
         ) {
-            Text(text = "Save")
+            Text(text = "Save and return")
         }
     }
-
 }

@@ -3,6 +3,7 @@ package nz.ac.canterbury.seng303.lab2.viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,6 +27,13 @@ class FlashcardViewModel(
 
     private val _selectedAnswerIndex = MutableStateFlow<Int?>(null)
     val selectedAnswerIndex: StateFlow<Int?> get() = _selectedAnswerIndex
+
+    private val _correctAnswersCount = MutableStateFlow(0)
+    val correctAnswersCount: StateFlow<Int> get() = _correctAnswersCount
+
+    init {
+        getFlashcards()
+    }
 
     fun getFlashcards() = viewModelScope.launch {
         flashcardStorage.getAll()
@@ -82,16 +90,31 @@ class FlashcardViewModel(
 
     // Function to start the flashcard game
     fun startFlashcardGame() {
+        _flashcards.value = _flashcards.value.map { flashcard ->
+            val shuffledAnswers = flashcard.answers.shuffled()
+            val newCorrectAnswerIndex = shuffledAnswers.indexOfFirst { it.text == flashcard.answers[flashcard.correctAnswerIndex].text }
+            flashcard.copy(
+                answers = shuffledAnswers,
+                correctAnswerIndex = newCorrectAnswerIndex
+            )
+        }.shuffled()
         _currentIndex.value = 0
+        _correctAnswersCount.value = 0
         _selectedAnswerIndex.value = null
     }
 
     // Function to move to the next flashcard
     fun moveToNextFlashcard() {
+        if (_selectedAnswerIndex.value != null) {
+            val currentFlashcard = _flashcards.value[_currentIndex.value]
+            if (_selectedAnswerIndex.value == currentFlashcard.correctAnswerIndex) {
+                _correctAnswersCount.value += 1
+            }
+        }
+
         if (_currentIndex.value < (_flashcards.value.size - 1)) {
             _currentIndex.value += 1
         } else {
-            // Handle the end of the game, e.g., navigate back to the main screen or show a summary
             Log.d("FLASHCARD_VIEW_MODEL", "End of flashcards")
         }
     }
@@ -100,4 +123,28 @@ class FlashcardViewModel(
     fun selectAnswer(index: Int) {
         _selectedAnswerIndex.value = index
     }
+
+    fun clearSelection() {
+        _selectedAnswerIndex.value = null
+    }
+
+    fun calculateCorrectAnswers(userAnswers: List<Int>): Int {
+        var count = 0
+        for ((index, answerIndex) in userAnswers.withIndex()) {
+            val flashcard = _flashcards.value.getOrNull(index) ?: continue
+            if (answerIndex == flashcard.correctAnswerIndex) {
+                count++
+            }
+        }
+        return count
+    }
+
+    fun navigateToSummary(navController: NavController, userAnswers: List<Int>) {
+        val updatedCorrectAnswersCount = calculateCorrectAnswers(userAnswers)
+        navController.navigate(
+            "summary/${updatedCorrectAnswersCount}/${_flashcards.value.size}/${userAnswers.joinToString(",")}"
+        )
+    }
+
+
 }

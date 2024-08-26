@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,13 +29,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import nz.ac.canterbury.seng303.lab2.screens.CreateFlashcard
 import nz.ac.canterbury.seng303.lab2.screens.EditFlashcard
 import nz.ac.canterbury.seng303.lab2.screens.FlashcardList
 import nz.ac.canterbury.seng303.lab2.screens.PlayFlashcardsScreen
+import nz.ac.canterbury.seng303.lab2.screens.SummaryScreen
 import nz.ac.canterbury.seng303.lab2.ui.theme.Lab1Theme
 import nz.ac.canterbury.seng303.lab2.viewmodels.CreateFlashcardViewModel
 import nz.ac.canterbury.seng303.lab2.viewmodels.EditFlashcardViewModel
@@ -58,7 +62,7 @@ class MainActivity : ComponentActivity() {
                         TopAppBar(
                             title = { Text("Flash Cards App") },
                             navigationIcon = {
-                                IconButton(onClick = { navController.popBackStack() }) {
+                                IconButton(onClick = { navController.navigate("Home") }) {
                                     Icon(
                                         imageVector = Icons.Default.ArrowBack,
                                         contentDescription = "Back"
@@ -71,19 +75,18 @@ class MainActivity : ComponentActivity() {
 
                     Box(
                         modifier = Modifier
-                            .padding(it) // Padding to account for the TopAppBar
-                            .padding(start = 10.dp, end = 10.dp) // Gap from the screen edge
-                            .fillMaxSize() // Fill available space
+                            .padding(it)
+                            .padding(start = 10.dp, end = 10.dp)
+                            .fillMaxSize()
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(width = 400.dp, height = 800.dp) // Specify width and height
-                                .background(Color.Cyan, RoundedCornerShape(8.dp)) // Background with rounded corners
-                                .border(2.dp, Color.Black, RoundedCornerShape(8.dp)) // Border with rounded corners
-                                .padding(16.dp) // Inner padding
-                                .align(Alignment.Center) // Center the inner Box within the parent
+                                .fillMaxSize()
+                                .background(Color(172,202,227), RoundedCornerShape(8.dp))
+                                .border(2.dp, Color.Black, RoundedCornerShape(8.dp))
+                                .padding(16.dp)
+                                .align(Alignment.Center)
                         ) {
-                            // Content inside the inner Box
                             val createFlashcardViewModel: CreateFlashcardViewModel = viewModel()
                             val editFlashcardViewModel: EditFlashcardViewModel = viewModel()
                             NavHost(navController = navController, startDestination = "Home") {
@@ -95,6 +98,25 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable("PlayFlashcards") {
                                     PlayFlashcardsScreen(navController, flashcardViewModel)
+                                }
+                                composable(
+                                    "summary/{correctAnswersCount}/{totalQuestions}/{userAnswers}",
+                                    arguments = listOf(
+                                        navArgument("correctAnswersCount") { type = NavType.IntType },
+                                        navArgument("totalQuestions") { type = NavType.IntType },
+                                        navArgument("userAnswers") { type = NavType.StringType }
+                                    )
+                                ) { backStackEntry ->
+                                    val correctAnswersCount = backStackEntry.arguments?.getInt("correctAnswersCount") ?: 0
+                                    val totalQuestions = backStackEntry.arguments?.getInt("totalQuestions") ?: 0
+                                    val userAnswers = backStackEntry.arguments?.getString("userAnswers")?.split(",")?.map { it.toInt() } ?: emptyList()
+
+                                    SummaryScreen(
+                                        correctAnswersCount = correctAnswersCount,
+                                        totalQuestions = totalQuestions,
+                                        flashcards = flashcardViewModel.flashcards.value,
+                                        userAnswers = userAnswers,
+                                    )
                                 }
                                 composable("CreateFlashcard") {
                                     CreateFlashcard(
@@ -147,13 +169,26 @@ fun Home(navController: NavController) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = { navController.navigate("ViewFlashCards") }) {
+        Button(onClick = { navController.navigate("ViewFlashCards") },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(120,128,191),
+                contentColor = Color.White
+            )
+            ) {
             Text("View Flash Cards")
         }
-        Button(onClick = { navController.navigate("CreateFlashcard") }) {
+        Button(onClick = { navController.navigate("CreateFlashcard") },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(120,128,191),
+                contentColor = Color.White
+            )) {
             Text("Create Flash Card")
         }
-        Button(onClick = { navController.navigate("PlayFlashcards") }) {
+        Button(onClick = { navController.navigate("PlayFlashcards") },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(120,128,191),
+                contentColor = Color.White
+            )) {
             Text("Play Flash Cards")
         }
     }

@@ -31,6 +31,17 @@ class EditFlashcardViewModel: ViewModel() {
         answers.add(Answer("")) // Add a new empty answer
     }
 
+    fun removeAnswer(index: Int) {
+        if (index >= 0 && index < answers.size) {
+            answers.removeAt(index)
+            if (index == correctAnswerIndex) {
+                correctAnswerIndex = -1
+            } else if (index < correctAnswerIndex) {
+                correctAnswerIndex -= 1
+            }
+        }
+    }
+
     var correctAnswerIndex by mutableStateOf(-1)
         private set
 

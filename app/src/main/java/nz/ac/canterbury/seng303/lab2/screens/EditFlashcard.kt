@@ -1,9 +1,13 @@
 package nz.ac.canterbury.seng303.lab2.screens
 
 import android.app.AlertDialog
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -11,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -43,18 +48,28 @@ fun EditFlashcard(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        Text(
+            text = "Edit flash card",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 16.dp)
+        )
+
         OutlinedTextField(
             value = editFlashcardViewModel.question,
             onValueChange = { editFlashcardViewModel.updateQuestion(it) },
-            label = { Text("Question") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp)
+                .background(Color.LightGray, RoundedCornerShape(8.dp)),
         )
 
 
         LazyColumn(
-            modifier = Modifier.weight(1f) // Take remaining space
+            modifier = Modifier.weight(1f)
+                .padding(bottom = 16.dp)
         ) {
             itemsIndexed(editFlashcardViewModel.answers) { index, answer ->
                 Row(
@@ -67,7 +82,9 @@ fun EditFlashcard(
                         checked = editFlashcardViewModel.correctAnswerIndex == index,
                         onCheckedChange = { isChecked ->
                             if (isChecked) {
-                                editFlashcardViewModel.updateCorrectAnswerIndex(index)
+                                if (answer.text.isNotBlank()) {
+                                    editFlashcardViewModel.updateCorrectAnswerIndex(index)
+                                }
                             } else if (editFlashcardViewModel.correctAnswerIndex == index) {
                                 editFlashcardViewModel.updateCorrectAnswerIndex(-1) // Uncheck the current selection
                             }
@@ -77,24 +94,48 @@ fun EditFlashcard(
                         value = answer.text,
                         onValueChange = { newText ->
                             editFlashcardViewModel.updateAnswer(index, newText)
+                            if (index == editFlashcardViewModel.correctAnswerIndex && newText.isBlank()) {
+                                editFlashcardViewModel.updateCorrectAnswerIndex(-1)
+                            }
                         },
-                        label = { Text("Answer ${index + 1}") },
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .weight(8f)
                             .padding(start = 8.dp)
+                            .background(Color.LightGray, RoundedCornerShape(8.dp))
                     )
+                    IconButton(
+                        onClick = { editFlashcardViewModel.removeAnswer(index) },
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Answer",
+                            tint = Color.Red
+                        )
+                    }
+                }
+            }
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = { editFlashcardViewModel.addAnswer() },
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(100.dp)
+                    ) {
+                        Text(text = "+")
+                    }
                 }
             }
         }
 
-        Button(
-            onClick = { editFlashcardViewModel.addAnswer() },
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 16.dp, bottom = 8.dp)
-        ) {
-            Text("+")
-        }
 
         Button(
             onClick = {
@@ -135,17 +176,15 @@ fun EditFlashcard(
                                 correctAnswerIndex = editFlashcardViewModel.correctAnswerIndex
                             )
                         )
-                        builder.setMessage("Edited flashcard!")
-                            .setCancelable(false)
-                            .setPositiveButton("Ok") { dialog, id ->
-                                navController.navigate("ViewFlashCards")
-                            }
-                        val alert = builder.create()
-                        alert.show()
+
+                        navController.navigate("ViewFlashCards")
+
                     }
                 }
             },
             modifier = Modifier
+                .padding(bottom = 8.dp)
+                .heightIn(min = 48.dp)
                 .align(Alignment.CenterHorizontally)
         ) {
             Text(text = "Save and return")
