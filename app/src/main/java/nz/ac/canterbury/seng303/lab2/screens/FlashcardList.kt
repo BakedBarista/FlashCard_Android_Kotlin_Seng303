@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -88,7 +89,6 @@ fun FlashcardItem(
             .padding(8.dp) // Outer padding for spacing between cards
             .background(Color.LightGray, RoundedCornerShape(8.dp)) // Background color with rounded corners
             .border(2.dp, Color.Black, RoundedCornerShape(8.dp)) // Border with rounded corners
-            .clickable { navController.navigate("FlashcardDetail/${flashcard.id}") } // Make the entire box clickable
             .padding(16.dp) // Inner padding for content within the box
     ) {
         Column(
@@ -98,10 +98,11 @@ fun FlashcardItem(
             Text(
                 text = flashcard.question,
                 style = MaterialTheme.typography.headlineSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                maxLines = Int.MAX_VALUE,
+                overflow = TextOverflow.Visible,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .wrapContentHeight()
                     .padding(bottom = 8.dp)
             )
 

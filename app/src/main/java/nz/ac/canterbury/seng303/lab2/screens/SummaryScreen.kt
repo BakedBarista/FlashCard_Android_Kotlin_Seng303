@@ -29,6 +29,7 @@ fun SummaryScreen(
     totalQuestions: Int,
     flashcards: List<Flashcard>,
     userAnswers: List<Int>,
+    navController: NavController
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -89,6 +90,17 @@ fun SummaryScreen(
                     )
                 }
             }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Button to navigate to the High Score screen
+        Button(
+            onClick = {
+                navController.navigate("highscores") // Replace with your actual route to the high score screen
+            },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text(text = "View High Scores")
         }
     }
 }

@@ -37,6 +37,7 @@ import androidx.navigation.navArgument
 import nz.ac.canterbury.seng303.lab2.screens.CreateFlashcard
 import nz.ac.canterbury.seng303.lab2.screens.EditFlashcard
 import nz.ac.canterbury.seng303.lab2.screens.FlashcardList
+import nz.ac.canterbury.seng303.lab2.screens.HighScoreScreen
 import nz.ac.canterbury.seng303.lab2.screens.PlayFlashcardsScreen
 import nz.ac.canterbury.seng303.lab2.screens.SummaryScreen
 import nz.ac.canterbury.seng303.lab2.ui.theme.Lab1Theme
@@ -116,8 +117,10 @@ class MainActivity : ComponentActivity() {
                                         totalQuestions = totalQuestions,
                                         flashcards = flashcardViewModel.flashcards.value,
                                         userAnswers = userAnswers,
+                                        navController = navController
                                     )
                                 }
+                                composable("highscores") { HighScoreScreen(flashcardViewModel) }
                                 composable("CreateFlashcard") {
                                     CreateFlashcard(
                                         navController = navController,

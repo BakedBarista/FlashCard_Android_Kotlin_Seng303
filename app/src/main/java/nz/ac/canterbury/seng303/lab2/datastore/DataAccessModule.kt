@@ -33,7 +33,8 @@ val dataAccessModule = module {
 
     viewModel {
         FlashcardViewModel(
-            flashcardStorage = get()
+            flashcardStorage = get(),
+            context = androidContext()
         )
     }
 }

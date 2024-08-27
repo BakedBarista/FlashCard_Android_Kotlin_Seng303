@@ -1,19 +1,24 @@
 package nz.ac.canterbury.seng303.lab2.viewmodels
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import nz.ac.canterbury.seng303.lab2.datastore.Storage
 import nz.ac.canterbury.seng303.lab2.models.Answer
 import nz.ac.canterbury.seng303.lab2.models.Flashcard
+import nz.ac.canterbury.seng303.lab2.models.HighScore
 import kotlin.random.Random
 
 class FlashcardViewModel(
-    private val flashcardStorage: Storage<Flashcard>
+    private val flashcardStorage: Storage<Flashcard>,
+    private val context: Context
 ) : ViewModel() {
 
     private val _flashcards = MutableStateFlow<List<Flashcard>>(emptyList())
@@ -31,10 +36,55 @@ class FlashcardViewModel(
     private val _correctAnswersCount = MutableStateFlow(0)
     val correctAnswersCount: StateFlow<Int> get() = _correctAnswersCount
 
+    private val _playerName = MutableStateFlow<String?>(null)
+    val playerName: StateFlow<String?> get() = _playerName
+
+    private val _highScores = MutableStateFlow<List<HighScore>>(emptyList())
+    val highScores: StateFlow<List<HighScore>> get() = _highScores
+
+    private val sharedPreferences: SharedPreferences =
+        context.getSharedPreferences("FlashcardApp", Context.MODE_PRIVATE)
+
     init {
         getFlashcards()
+        loadHighScores()
     }
 
+    fun setPlayerName(name: String) {
+        _playerName.value = name
+    }
+
+    fun saveHighScore() {
+        val name = _playerName.value ?: return
+        val score = _correctAnswersCount.value
+
+        val newHighScore = HighScore(name, score)
+
+        val updatedScores = _highScores.value.toMutableList()
+        updatedScores.add(newHighScore)
+        _highScores.value = updatedScores.sortedByDescending { it.score }
+
+        saveHighScoresToStorage(_highScores.value)
+    }
+
+    private fun loadHighScores() {
+        val json = sharedPreferences.getString("high_scores", null)
+        if (json != null) {
+            val type = object : TypeToken<List<HighScore>>() {}.type
+            _highScores.value = Gson().fromJson(json, type)
+        }
+    }
+
+    private fun saveHighScoresToStorage(highScores: List<HighScore>) {
+        val editor = sharedPreferences.edit()
+        val json = Gson().toJson(highScores)
+        editor.putString("high_scores", json)
+        editor.apply()
+    }
+
+    fun getHighScores(): Flow<List<HighScore>> {
+        return _highScores
+    }
     fun getFlashcards() = viewModelScope.launch {
         flashcardStorage.getAll()
             .catch { Log.e("FLASHCARD_VIEW_MODEL", it.toString()) }
